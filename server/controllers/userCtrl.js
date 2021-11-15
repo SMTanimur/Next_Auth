@@ -182,6 +182,83 @@ export const login = asyncHandler(async (req, res) => {
   }
 
 })
+
+
+//update user profile
+
+export const updateUserProfile = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+  console.log(req.body);
+  if (user) {
+    user.name = req.body.name || user.name;
+    if (req.body.avatar) {
+      user.avatar = req.body.avatar;
+    }
+    if (req.body.newPassword) {
+      if (await user.matchPassword(req.body.password)) {
+        user.password = req.body.newPassword;
+      } else {
+        res.status(400);
+        throw new Error('Current password is incorrect');
+      }
+    }
+
+    const updateUser = await user.save();
+
+    res.json({
+      user: {
+        _id: updateUser._id,
+        name: updateUser.name,
+        email: updateUser.email,
+        avatar: updateUser.avatar,
+        token: generateIdToken(updateUser._id),
+      },
+      message: 'Updated successfully',
+    });
+  } else {
+    res.status(404);
+    throw new Error('User not found');
+  }
+});
+
+
+
+
+// Get User Profile
+export const getUserProfile = asyncHandler(async (req, res) => {
+
+  try {
+    const user = await User.findById(req.user.id).select('-password')
+
+    res.json(user)
+} catch (err) {
+    return res.status(500).json({msg: err.message})
+}
+});
+
+// Get All User Profile
+export const getAllUserInfo = asyncHandler(async (req, res) => {
+
+  try {
+    const user = await User.findById(req.user.id).select('-password')
+
+    res.json(user)
+} catch (err) {
+    return res.status(500).json({msg: err.message})
+}
+});
+// Get user by ID
+export const getUserById = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id).select('-password');
+
+  if (user) {
+    res.json({ user });
+  } else {
+    res.status(404);
+    throw new Error('User not found');
+  }
+});
+
   
 
 function validateEmail(email) {
